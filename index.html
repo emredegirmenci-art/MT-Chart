@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="MT Karne">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#1f5fbf">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<title>MT Karne</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<!-- ============ LİSTE ============ -->
+<div id="vList" class="view">
+  <header>
+    <button type="button" class="titlebtn" id="btnTitle" aria-label="Karne başlığını düzenle"><h1 id="listTitle">TATVAN MT KAMPI</h1><span>✎</span></button>
+    <button id="btnNew" type="button">+ Yeni</button>
+  </header>
+  <main>
+    <div id="installHint" class="hint" hidden>
+      Çevrimdışı kullanmak için: Safari'de <b>Paylaş</b> → <b>Ana Ekrana Ekle</b>.
+    </div>
+    <input id="search" type="search" placeholder="Nokta no, ölçen, mevki ara…">
+    <div id="list"></div>
+    <p id="empty" class="muted" hidden>Henüz karne yok. “+ Yeni” ile başlayın.</p>
+    <section>
+      <h2>Dışa aktar / yedek</h2>
+      <div class="btns">
+        <button type="button" class="sec" id="btnCsv">Excel (CSV)</button>
+        <button type="button" class="sec" id="btnPdfAll">Tümü PDF</button>
+        <button type="button" class="sec" id="btnBackup">Yedek al</button>
+        <button type="button" class="sec" id="btnRestore">Yedek yükle</button>
+      </div>
+      <input type="file" id="restoreFile" accept="application/json,.json" hidden>
+      <p class="muted small">Kayıtlar yalnızca bu telefonda durur. Her akşam “Yedek al” veya “Excel (CSV)” ile dışarı gönderin.</p>
+      <p class="muted small" id="storageInfo"></p>
+    </section>
+  </main>
+</div>
+
+<!-- ============ FORM ============ -->
+<div id="vForm" class="view" hidden>
+<header>
+  <button class="sec" id="btnBack" type="button">‹ Liste</button>
+  <h1 id="formTitle">Karne</h1>
+  <span id="saveState" class="muted small"></span>
+</header>
+
+<main>
+<form id="f" autocomplete="off">
+
+<section>
+  <label for="baslik">Karne başlığı</label><input id="baslik" name="baslik" type="text" autocapitalize="characters" class="strong">
+  <div class="row">
+    <div><label for="nokta">Nokta No</label><input id="nokta" name="nokta" type="text" autocapitalize="characters"></div>
+    <div><label for="box">Box Seri No</label><input id="box" name="box" type="text" inputmode="numeric"></div>
+  </div>
+  <div class="row r-date">
+    <div><label for="tarih">Tarih</label><input id="tarih" name="tarih" type="date"></div>
+    <div><label>&nbsp;</label><label class="chk"><input id="mt" name="mt" type="checkbox"> MT</label></div>
+  </div>
+  <label for="olcen">Ölçüyü Alan</label><input id="olcen" name="olcen" type="text" autocapitalize="words">
+</section>
+
+<section>
+  <h2>Konum</h2>
+  <div class="gpsbar">
+    <button type="button" id="btnGps">Konumu al</button>
+    <small id="gpsInfo">GPS ile UTM doldurulur</small>
+  </div>
+  <div class="msg" id="gpsMsg"></div>
+  <div class="row">
+    <div><label for="datum">Datum</label>
+      <select id="datum" name="datum"><option value="WGS84">WGS84</option><option value="ED50">ED50 (Türkiye)</option></select></div>
+    <div><label for="zone">UTM Zon</label><input id="zone" name="zone" type="text" autocapitalize="characters" readonly class="gps"></div>
+  </div>
+  <div class="row">
+    <div><label for="enlem">Doğu (D)</label><input id="enlem" name="enlem" type="text" inputmode="decimal" readonly class="gps"></div>
+    <div><label for="boylam">Kuzey (K)</label><input id="boylam" name="boylam" type="text" inputmode="decimal" readonly class="gps"></div>
+  </div>
+  <div class="row">
+    <div><label for="yukseklik">Yükseklik</label><div class="unit"><input id="yukseklik" name="yukseklik" type="text" inputmode="decimal"><span>m</span></div></div>
+    <div><label for="aku">Akü gerilimi</label><div class="unit"><input id="aku" name="aku" type="text" inputmode="decimal" data-min="12"><span>V</span></div></div>
+  </div>
+  <label class="chk small-chk"><input type="checkbox" id="elle" name="elle"> Koordinatı elle düzelt</label>
+  <input id="lat" name="lat" type="hidden"><input id="lon" name="lon" type="hidden"><input id="acc" name="acc" type="hidden"><input id="gpsZaman" name="gpsZaman" type="hidden">
+  <label for="mevki">Mevkii</label><input id="mevki" name="mevki" type="text">
+</section>
+
+<section>
+  <h2>Kroki</h2>
+  <div class="kroki-wrap">
+    <canvas id="kroki" width="600" height="600"></canvas>
+    <div class="kroki-btns"><button class="sec" type="button" id="btnUndo">Geri al</button><button class="sec" type="button" id="btnClear">Temizle</button><p class="muted small" id="krokiHint"></p></div>
+  </div>
+</section>
+
+<section>
+  <h2>Dipol aralığı</h2>
+  <table class="grid">
+    <tr><th></th><th>Ex</th><th>Ey</th></tr>
+    <tr><th>Uzunluk (m)</th><td><input name="ex_len" type="text" inputmode="decimal" readonly class="auto" title="N+S"></td><td><input name="ey_len" type="text" inputmode="decimal" readonly class="auto" title="E+W"></td></tr>
+    <tr><th>AC (mV)</th><td><input name="ex_ac" data-max="150" type="text" inputmode="decimal"></td><td><input name="ey_ac" data-max="150" type="text" inputmode="decimal"></td></tr>
+    <tr><th>DC (mV)</th><td><input name="ex_dc" data-max="150" type="text" inputmode="decimal"></td><td><input name="ey_dc" data-max="150" type="text" inputmode="decimal"></td></tr>
+    <tr><th>kΩ</th><td><input name="ex_k" data-max="2" data-strict="1" type="text" inputmode="decimal"></td><td><input name="ey_k" data-max="2" data-strict="1" type="text" inputmode="decimal"></td></tr>
+  </table>
+  <p class="muted small" style="margin:4px 0 0">Uzunluklar elektrod uzaklıklarından otomatik: Ex = N+S, Ey = E+W.</p>
+  <details class="note"><summary><b>!!Dikkat</b> notları</summary>
+    <p>AC ve DC gerilimi <u><b>sayısal voltmetre</b></u> ile ölçülmeli. <u><b>Ölçülen Gerilim≥ 150 mV AC ise:</b></u> <b>a)</b> genlik küçük (low) seçilmelidir. <b>b)</b> Dipol arasındaki toplam gerilim, tek tek ölçülen değerlerin toplamından önemli oranda farklı ise yüksek gerilimin ölçüldüğü pot değiştirilmelidir.</p>
+    <p>DC gerilimi ≥ 150 mV ise a) pot sorunlu olabilir! b) istasyon yeri değiştirilmesi gerekebilir!</p>
+    <p>Kontak direnci Analog ohmmetre ile <u><b>en son</b></u> ölçülmelidir. Direnç&gt;2Ωk ise istasyon kurulumunda hata olabilir! Hatalı ölçü alınabilir!</p>
+  </details>
+</section>
+
+<section>
+  <h2>Sensörler</h2>
+  <div class="row4">
+    <div><label for="sensor">Tip</label><input id="sensor" name="sensor" type="text" placeholder="MTC-150"></div>
+    <div><label for="hx">Hx</label><input id="hx" name="hx" type="text" inputmode="numeric"></div>
+    <div><label for="hy">Hy</label><input id="hy" name="hy" type="text" inputmode="numeric"></div>
+    <div><label for="hz">Hz</label><input id="hz" name="hz" type="text" inputmode="numeric"></div>
+  </div>
+  <label for="notlar">Notlar</label><textarea id="notlar" name="notlar" rows="3"></textarea>
+</section>
+
+<section>
+  <h2>Elektrodlar</h2>
+  <table class="grid">
+    <tr><th></th><th>Toprakla pot arası direnç kΩ</th><th>MTU'ya uzaklık (m)</th></tr>
+    <tr><th>N</th><td><input name="el_n_k" data-max="2" type="text" inputmode="decimal"></td><td><input name="el_n_d" type="text" inputmode="decimal"></td></tr>
+    <tr><th>S</th><td><input name="el_s_k" data-max="2" type="text" inputmode="decimal"></td><td><input name="el_s_d" type="text" inputmode="decimal"></td></tr>
+    <tr><th>E</th><td><input name="el_e_k" data-max="2" type="text" inputmode="decimal"></td><td><input name="el_e_d" type="text" inputmode="decimal"></td></tr>
+    <tr><th>W</th><td><input name="el_w_k" data-max="2" type="text" inputmode="decimal"></td><td><input name="el_w_d" type="text" inputmode="decimal"></td></tr>
+  </table>
+  <details class="note"><summary><b>AÇIKLAMA</b></summary>
+    <p>Duyarlı Kontak direnci ölçmek için E-kabloları aletten çıkarılmalı ve toprak pot ile her pot arası direnç ölçülmelidir.</p>
+    <p><b>!!Dikkat: Eğer direnç ≥2Ωk ise:</b><br>
+    a) Elektrodu yerinden çıkarıp daha çok tuzlu su ile çamur yapmak<br>
+    b) Elektrodun altında büyük bir kaya parçası olması bu dirence neden olabilir. Elektrodu yeni açılan bir çukura yerleştirmeli<br>
+    c) Kablolar kontrol edilmelidir.</p>
+  </details>
+</section>
+
+<section>
+  <h2>Fotoğraflar</h2>
+  <div id="photos" class="photos"></div>
+  <label class="filebtn">+ Fotoğraf çek / ekle<input type="file" id="photoIn" accept="image/*" multiple hidden></label>
+</section>
+
+<section>
+  <h2>Araç ve nöbet</h2>
+  <div class="row">
+    <div><label for="plaka">Araç Plakası</label><input id="plaka" name="plaka" type="text" autocapitalize="characters"></div>
+    <div><label for="telefon">Telefon</label><input id="telefon" name="telefon" type="tel" inputmode="tel" autocomplete="tel"></div>
+  </div>
+  <label for="nobetci">Nöbetçi</label><input id="nobetci" name="nobetci" type="text" autocapitalize="words">
+</section>
+
+<section>
+  <h2>Harita</h2>
+  <div class="mapbox"><img id="mapImg" alt="Konum haritası" hidden><canvas id="mapSchema" width="768" height="384" hidden></canvas><p id="mapEmpty" class="muted small">Konum alınınca harita burada görünür.</p></div>
+  <div class="btns"><button type="button" class="sec" id="btnMap">Haritayı yenile</button></div>
+  <p class="muted small" id="mapNote"></p>
+</section>
+
+<button type="button" class="danger" id="btnDelete">Bu karneyi sil</button>
+</form>
+</main>
+
+<div class="actions">
+  <button type="button" id="btnSave">Kaydet</button>
+  <button type="button" class="sec" id="btnPdf">PDF</button>
+</div>
+</div>
+
+<div id="pdfRoot" aria-hidden="true"></div>
+<div id="busy" hidden><div>PDF hazırlanıyor…</div></div>
+<div class="toast" id="toast"></div>
+
+<script src="utm.js"></script>
+<script src="lib/yerlesim.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

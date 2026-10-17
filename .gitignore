@@ -1,0 +1,5 @@
+# İmza anahtarı ve şifresi depoya konmaz
+*.keystore
+*.jks
+keystore.properties
+*.idsig
